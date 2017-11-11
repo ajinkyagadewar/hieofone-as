@@ -6,7 +6,7 @@ set -e
 # Constants and paths
 LOGDIR=/var/log/hieofone-as
 LOG=$LOGDIR/installation_log
-WEB=/opt
+WEB=/home/ubuntu
 HIE=$WEB/hieofone-as
 ENV=$HIE/.env
 PRIVKEY=$HIE/.privkey.pem
@@ -145,10 +145,13 @@ if [ ! -f /usr/local/bin/composer ]; then
 	mv composer.phar /usr/local/bin/composer
 fi
 log_only "Installed composer.phar."
-cd $WEB
-composer create-project hieofone-as/hieofone-as --prefer-dist --stability dev
+#cd $WEB
+#composer create-project hieofone-as/hieofone-as --prefer-dist --stability dev
 cd $HIE
+composer install
 # Edit .env file
+cp .env.example .env
+touch .version
 echo "URI=localhost
 
 TWITTER_KEY=yourkeyfortheservice
@@ -165,7 +168,7 @@ sed -i '/^DB_USERNAME=/s/=.*/='"$MYSQL_USERNAME"'/' .env
 sed -i '/^DB_PASSWORD=/s/=.*/='"$MYSQL_PASSWORD"'/' .env
 openssl genrsa -out $PRIVKEY 2048
 openssl rsa -in $PRIVKEY -pubout -out $PUBKEY
-chown -R $WEB_GROUP.$WEB_USER $HIE
+chown -R $WEB_GROUP.$WEB_USER $HIE/.version $HIE/public $HIE/storage
 chmod -R 755 $HIE
 chmod -R 777 $HIE/storage
 chmod -R 777 $HIE/public
@@ -173,7 +176,7 @@ log_only "Installed HIE of One Authorization Server core files."
 echo "create database $MYSQL_DATABASE" | mysql -u $MYSQL_USERNAME -p$MYSQL_PASSWORD
 php artisan migrate:install
 php artisan migrate
-a2enmod ssl
+a2enmod rewrite ssl
 if [ -e "$WEB_CONF"/hie.conf ]; then
 	rm "$WEB_CONF"/hie.conf
 fi
@@ -240,5 +243,5 @@ log_only "Restarting Apache service."
 $APACHE >> $LOG 2>&1
 # Installation completed
 log_only "You can now complete your new installation of HIE of One Authorization Server by browsing to:"
-log_only "https://localhost/install"
+log_only "https://hie.drjio.com/install"
 exit 0
